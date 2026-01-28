@@ -6,6 +6,7 @@ import CheckInButton from './components/CheckInButton';
 import Calendar from './components/Calendar';
 import Settings from './components/Settings';
 import AuthForm from './components/AuthForm';
+import Onboarding from './components/Onboarding';
 
 function App() {
   const [showSettings, setShowSettings] = useState(false);
@@ -44,6 +45,12 @@ function App() {
   // 로그인 필요
   if (!accessToken || !user) {
     return <AuthForm />;
+  }
+
+  // 온보딩 필요 (설정이 없는 경우)
+  const needsOnboarding = !settings?.morning_location_name || !settings?.afternoon_location_name;
+  if (needsOnboarding) {
+    return <Onboarding onComplete={() => fetchSettings()} />;
   }
 
   const today = new Date();
