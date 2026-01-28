@@ -18,7 +18,7 @@ function App() {
   const checkIns = useAuthStore((s) => s.checkIns);
   const fetchMe = useAuthStore((s) => s.fetchMe);
   const fetchSettings = useAuthStore((s) => s.fetchSettings);
-  const fetchCheckIns = useAuthStore((s) => s.fetchCheckIns);
+  const fetchCheckInsByMonth = useAuthStore((s) => s.fetchCheckInsByMonth);
 
   // 앱 시작 시 사용자 정보 로드
   useEffect(() => {
@@ -26,12 +26,14 @@ function App() {
       if (accessToken) {
         await fetchMe();
         await fetchSettings();
-        await fetchCheckIns(format(new Date(), 'yyyy-MM-dd'));
+        // 이번 달 전체 출근 기록 가져오기
+        const now = new Date();
+        await fetchCheckInsByMonth(now.getFullYear(), now.getMonth() + 1);
       }
       setInitializing(false);
     };
     init();
-  }, [accessToken, fetchMe, fetchSettings, fetchCheckIns]);
+  }, [accessToken, fetchMe, fetchSettings, fetchCheckInsByMonth]);
 
   // 로딩 중
   if (initializing) {
