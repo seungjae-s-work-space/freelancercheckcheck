@@ -60,7 +60,7 @@ function App() {
   const workDays = settings?.work_days || [1, 2, 3, 4, 5];
   const isWorkDay = workDays.includes(today.getDay());
 
-  const todayCheckIns = checkIns.filter((c) => c.date === todayStr);
+  const todayCheckIns = checkIns.filter((c) => c.date.substring(0, 10) === todayStr);
   const morningCheckIn = todayCheckIns.find((c) => c.period === 'morning') || null;
   const afternoonCheckIn = todayCheckIns.find((c) => c.period === 'afternoon') || null;
 
@@ -69,15 +69,15 @@ function App() {
 
   // 이번 달 통계
   const monthCheckIns = checkIns.filter((c) =>
-    c.date.startsWith(format(today, 'yyyy-MM'))
+    c.date.substring(0, 7) === format(today, 'yyyy-MM')
   );
   // 완전 출근: 오전/오후 모두 퇴근까지 완료
   const completeDays = new Set(
     monthCheckIns
       .filter((c) => c.period === 'morning' && c.checked_out_at)
-      .map((c) => c.date)
+      .map((c) => c.date.substring(0, 10))
       .filter((date) =>
-        monthCheckIns.some((c) => c.date === date && c.period === 'afternoon' && c.checked_out_at)
+        monthCheckIns.some((c) => c.date.substring(0, 10) === date && c.period === 'afternoon' && c.checked_out_at)
       )
   ).size;
   // 총 업무시간 (분)
