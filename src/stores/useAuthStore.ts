@@ -34,6 +34,7 @@ interface AuthStore {
     lat: number;
     lng: number;
   }) => Promise<boolean>;
+  checkOut: (date: string, period: 'morning' | 'afternoon') => Promise<boolean>;
   fetchCheckIns: (date: string) => Promise<void>;
   fetchCheckInsByMonth: (year: number, month: number) => Promise<void>;
 
@@ -158,6 +159,28 @@ export const useAuthStore = create<AuthStore>()(
         if (data) {
           set((state) => ({
             checkIns: [...state.checkIns, data.check_in],
+            isLoading: false,
+          }));
+          return true;
+        }
+
+        return false;
+      },
+
+      checkOut: async (date, period) => {
+        set({ isLoading: true, error: null });
+        const { data, error } = await checkInApi.checkOut({ date, period });
+
+        if (error) {
+          set({ isLoading: false, error });
+          return false;
+        }
+
+        if (data) {
+          set((state) => ({
+            checkIns: state.checkIns.map((c) =>
+              c.id === data.check_in.id ? data.check_in : c
+            ),
             isLoading: false,
           }));
           return true;

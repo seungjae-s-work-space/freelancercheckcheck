@@ -89,6 +89,12 @@ export const checkInApi = {
       body: JSON.stringify(data),
     }),
 
+  checkOut: (data: { date: string; period: 'morning' | 'afternoon' }) =>
+    request<{ check_in: CheckIn }>('/checkouts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
   getByDate: (date: string) =>
     request<{ check_ins: CheckIn[] }>(`/checkins?date=${date}`),
 
@@ -139,4 +145,6 @@ export interface CheckIn {
   lat: number;
   lng: number;
   checked_at: string;
+  checked_out_at: string | null;
+  work_minutes: number;
 }

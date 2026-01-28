@@ -59,21 +59,29 @@ function App() {
   const isWorkDay = workDays.includes(today.getDay());
 
   const todayCheckIns = checkIns.filter((c) => c.date === todayStr);
-  const hasMorning = todayCheckIns.some((c) => c.period === 'morning');
-  const hasAfternoon = todayCheckIns.some((c) => c.period === 'afternoon');
+  const morningCheckIn = todayCheckIns.find((c) => c.period === 'morning') || null;
+  const afternoonCheckIn = todayCheckIns.find((c) => c.period === 'afternoon') || null;
+
+  // 오후 출근 가능 조건: 오전 출근 안 했거나, 오전 퇴근 완료
+  const canAfternoonCheckIn = !morningCheckIn || !!morningCheckIn.checked_out_at;
 
   // 이번 달 통계
   const monthCheckIns = checkIns.filter((c) =>
     c.date.startsWith(format(today, 'yyyy-MM'))
   );
+  // 완전 출근: 오전/오후 모두 퇴근까지 완료
   const completeDays = new Set(
     monthCheckIns
-      .filter((c) => c.period === 'morning')
+      .filter((c) => c.period === 'morning' && c.checked_out_at)
       .map((c) => c.date)
       .filter((date) =>
-        monthCheckIns.some((c) => c.date === date && c.period === 'afternoon')
+        monthCheckIns.some((c) => c.date === date && c.period === 'afternoon' && c.checked_out_at)
       )
   ).size;
+  // 총 업무시간 (분)
+  const totalWorkMinutes = monthCheckIns.reduce((sum, c) => sum + (c.work_minutes || 0), 0);
+  const totalWorkHours = Math.floor(totalWorkMinutes / 60);
+  const totalWorkMins = totalWorkMinutes % 60;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -118,7 +126,8 @@ function App() {
                 : null
             }
             disabled={!isWorkDay}
-            alreadyCheckedIn={hasMorning}
+            checkIn={morningCheckIn}
+            canCheckIn={true}
           />
           <CheckInButton
             period="afternoon"
@@ -133,43 +142,26 @@ function App() {
                 : null
             }
             disabled={!isWorkDay}
-            alreadyCheckedIn={hasAfternoon}
+            checkIn={afternoonCheckIn}
+            canCheckIn={canAfternoonCheckIn}
           />
         </div>
 
         {/* Stats */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
           <h3 className="font-semibold mb-3">이번 달 통계</h3>
-          <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="grid grid-cols-2 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-blue-500">
                 {completeDays}
               </div>
-              <div className="text-sm text-gray-500">완전 출근</div>
+              <div className="text-sm text-gray-500">완전 출근일</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-yellow-500">
-                {
-                  new Set(
-                    monthCheckIns
-                      .filter(
-                        (c) =>
-                          !monthCheckIns.some(
-                            (other) =>
-                              other.date === c.date && other.period !== c.period
-                          )
-                      )
-                      .map((c) => c.date)
-                  ).size
-                }
+              <div className="text-2xl font-bold text-green-500">
+                {totalWorkHours}시간 {totalWorkMins}분
               </div>
-              <div className="text-sm text-gray-500">부분 출근</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-gray-400">
-                {monthCheckIns.length}
-              </div>
-              <div className="text-sm text-gray-500">총 도장</div>
+              <div className="text-sm text-gray-500">총 업무시간</div>
             </div>
           </div>
         </div>
