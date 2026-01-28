@@ -26,6 +26,13 @@ async function request<T>(
     const data = await response.json();
 
     if (!response.ok) {
+      // 401 Unauthorized - 토큰 만료, 로그아웃 처리
+      if (response.status === 401) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('checkin-auth-storage');
+        window.location.reload();
+      }
       return { error: data.error || '요청에 실패했습니다' };
     }
 
