@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuthStore } from '../stores/useAuthStore';
-import { getCurrentPosition, isWithinRadius } from '../utils/geo';
+import { getCurrentPosition, getDistanceFromLatLng } from '../utils/geo';
 import { format } from 'date-fns';
 import type { CheckIn } from '../api/client';
 
@@ -58,16 +58,24 @@ export default function CheckInButton({
       const position = await getCurrentPosition();
       const { latitude, longitude } = position.coords;
 
-      const withinRadius = isWithinRadius(
+      // 거리 계산 및 로그 출력
+      const distance = getDistanceFromLatLng(
         latitude,
         longitude,
         location.lat,
-        location.lng,
-        location.radius
+        location.lng
       );
+      console.log('=== 출근 위치 확인 ===');
+      console.log(`현재 위치: ${latitude}, ${longitude}`);
+      console.log(`목표 위치: ${location.lat}, ${location.lng} (${location.name})`);
+      console.log(`거리: ${Math.round(distance)}m`);
+      console.log(`허용 반경: ${location.radius}m`);
+      console.log(`판정: ${distance <= location.radius ? '✅ 범위 내' : '❌ 범위 밖'}`);
+
+      const withinRadius = distance <= location.radius;
 
       if (!withinRadius) {
-        setError(`${location.name} 근처가 아닙니다`);
+        setError(`${location.name} 근처가 아닙니다 (${Math.round(distance)}m 떨어짐)`);
         setLoading(false);
         return;
       }
