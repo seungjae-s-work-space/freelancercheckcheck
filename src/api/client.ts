@@ -26,11 +26,22 @@ async function request<T>(
     const data = await response.json();
 
     if (!response.ok) {
-      // 401 Unauthorized - 토큰 만료, 로그아웃 처리
+      // 401 Unauthorized - 토큰만 삭제 (설정은 유지)
       if (response.status === 401) {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
-        localStorage.removeItem('checkin-auth-storage');
+        // Zustand 스토어에서 토큰만 제거
+        const stored = localStorage.getItem('checkin-auth-storage');
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            parsed.state.accessToken = null;
+            parsed.state.refreshToken = null;
+            localStorage.setItem('checkin-auth-storage', JSON.stringify(parsed));
+          } catch {
+            // 파싱 실패 시 무시
+          }
+        }
         window.location.reload();
       }
       return { error: data.error || '요청에 실패했습니다' };
