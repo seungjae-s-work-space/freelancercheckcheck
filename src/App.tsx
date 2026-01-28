@@ -121,7 +121,7 @@ function App() {
                     name: settings.morning_location_name,
                     lat: settings.morning_lat,
                     lng: settings.morning_lng,
-                    radius: settings.morning_radius || 300,
+                    radius: settings.morning_radius || 500,
                   }
                 : null
             }
@@ -137,7 +137,7 @@ function App() {
                     name: settings.afternoon_location_name,
                     lat: settings.afternoon_lat,
                     lng: settings.afternoon_lng,
-                    radius: settings.afternoon_radius || 300,
+                    radius: settings.afternoon_radius || 500,
                   }
                 : null
             }

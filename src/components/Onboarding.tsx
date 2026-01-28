@@ -46,11 +46,11 @@ export default function Onboarding({ onComplete }: Props) {
       morning_location_name: morningPlace.name,
       morning_lat: morningPlace.lat,
       morning_lng: morningPlace.lng,
-      morning_radius: 300,
+      morning_radius: 500,
       afternoon_location_name: afternoonPlace.name,
       afternoon_lat: afternoonPlace.lat,
       afternoon_lng: afternoonPlace.lng,
-      afternoon_radius: 300,
+      afternoon_radius: 500,
     });
     setSaving(false);
 
