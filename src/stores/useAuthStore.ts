@@ -15,6 +15,7 @@ interface AuthStore {
 
   // CheckIns
   checkIns: CheckIn[];
+  todayCheckIns: CheckIn[];
 
   // Auth actions
   signup: (email: string, password: string, name: string) => Promise<boolean>;
@@ -36,6 +37,7 @@ interface AuthStore {
   }) => Promise<boolean>;
   checkOut: (date: string, period: 'morning' | 'afternoon') => Promise<boolean>;
   fetchCheckIns: (date: string) => Promise<void>;
+  fetchTodayCheckIns: () => Promise<void>;
   fetchCheckInsByMonth: (year: number, month: number) => Promise<void>;
 
   clearError: () => void;
@@ -51,6 +53,7 @@ export const useAuthStore = create<AuthStore>()(
       error: null,
       settings: null,
       checkIns: [],
+      todayCheckIns: [],
 
       signup: async (email, password, name) => {
         set({ isLoading: true, error: null });
@@ -113,6 +116,7 @@ export const useAuthStore = create<AuthStore>()(
           refreshToken: null,
           settings: null,
           checkIns: [],
+          todayCheckIns: [],
         });
       },
 
@@ -157,8 +161,11 @@ export const useAuthStore = create<AuthStore>()(
         }
 
         if (data) {
+          const today = new Date().toISOString().split('T')[0];
+          const isToday = checkInData.date === today;
           set((state) => ({
             checkIns: [...state.checkIns, data.check_in],
+            todayCheckIns: isToday ? [...state.todayCheckIns, data.check_in] : state.todayCheckIns,
             isLoading: false,
           }));
           return true;
@@ -177,10 +184,17 @@ export const useAuthStore = create<AuthStore>()(
         }
 
         if (data) {
+          const today = new Date().toISOString().split('T')[0];
+          const isToday = date === today;
           set((state) => ({
             checkIns: state.checkIns.map((c) =>
               c.id === data.check_in.id ? data.check_in : c
             ),
+            todayCheckIns: isToday
+              ? state.todayCheckIns.map((c) =>
+                  c.id === data.check_in.id ? data.check_in : c
+                )
+              : state.todayCheckIns,
             isLoading: false,
           }));
           return true;
@@ -193,6 +207,14 @@ export const useAuthStore = create<AuthStore>()(
         const { data } = await checkInApi.getByDate(date);
         if (data) {
           set({ checkIns: data.check_ins });
+        }
+      },
+
+      fetchTodayCheckIns: async () => {
+        const today = new Date().toISOString().split('T')[0];
+        const { data } = await checkInApi.getByDate(today);
+        if (data) {
+          set({ todayCheckIns: data.check_ins });
         }
       },
 

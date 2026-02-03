@@ -16,8 +16,10 @@ function App() {
   const user = useAuthStore((s) => s.user);
   const settings = useAuthStore((s) => s.settings);
   const checkIns = useAuthStore((s) => s.checkIns);
+  const todayCheckIns = useAuthStore((s) => s.todayCheckIns);
   const fetchMe = useAuthStore((s) => s.fetchMe);
   const fetchSettings = useAuthStore((s) => s.fetchSettings);
+  const fetchTodayCheckIns = useAuthStore((s) => s.fetchTodayCheckIns);
   const fetchCheckInsByMonth = useAuthStore((s) => s.fetchCheckInsByMonth);
 
   // 앱 시작 시 사용자 정보 로드
@@ -26,14 +28,16 @@ function App() {
       if (accessToken) {
         await fetchMe();
         await fetchSettings();
-        // 이번 달 전체 출근 기록 가져오기
+        // 오늘 출근 기록 가져오기 (별도 관리)
+        await fetchTodayCheckIns();
+        // 이번 달 전체 출근 기록 가져오기 (캘린더용)
         const now = new Date();
         await fetchCheckInsByMonth(now.getFullYear(), now.getMonth() + 1);
       }
       setInitializing(false);
     };
     init();
-  }, [accessToken, fetchMe, fetchSettings, fetchCheckInsByMonth]);
+  }, [accessToken, fetchMe, fetchSettings, fetchTodayCheckIns, fetchCheckInsByMonth]);
 
   // 로딩 중
   if (initializing) {
@@ -56,11 +60,9 @@ function App() {
   }
 
   const today = new Date();
-  const todayStr = format(today, 'yyyy-MM-dd');
   const workDays = settings?.work_days || [1, 2, 3, 4, 5];
   const isWorkDay = workDays.includes(today.getDay());
 
-  const todayCheckIns = checkIns.filter((c) => c.date.substring(0, 10) === todayStr);
   const morningCheckIn = todayCheckIns.find((c) => c.period === 'morning') || null;
   const afternoonCheckIn = todayCheckIns.find((c) => c.period === 'afternoon') || null;
 
