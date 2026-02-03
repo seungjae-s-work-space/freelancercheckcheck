@@ -10,6 +10,7 @@ const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
 export default function Onboarding({ onComplete }: Props) {
   const updateSettings = useAuthStore((s) => s.updateSettings);
+  const logout = useAuthStore((s) => s.logout);
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
 
@@ -64,6 +65,15 @@ export default function Onboarding({ onComplete }: Props) {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-lg">
+        {/* 로그아웃 버튼 */}
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={logout}
+            className="text-sm text-gray-400 hover:text-gray-600"
+          >
+            로그아웃
+          </button>
+        </div>
         {/* Step 1: 출근 요일 */}
         {step === 1 && (
           <>
