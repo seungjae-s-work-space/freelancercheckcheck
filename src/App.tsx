@@ -92,20 +92,18 @@ function App() {
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">프리랜서 출근</h1>
-            {(user?.extra_days ?? 0) > 0 && (
-              <div className="text-xs text-purple-600 font-medium">
-                🎉 적립 연차: {user?.extra_days}일
-              </div>
-            )}
+          <h1 className="text-xl font-bold">프리랜서 출근</h1>
+          <div className="flex items-center gap-3">
+            <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
+              🎫 연차 {user?.extra_days ?? 0}일
+            </div>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="p-2 hover:bg-gray-100 rounded-lg"
+            >
+              설정
+            </button>
           </div>
-          <button
-            onClick={() => setShowSettings(true)}
-            className="p-2 hover:bg-gray-100 rounded-lg"
-          >
-            설정
-          </button>
         </div>
       </header>
 
