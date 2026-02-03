@@ -5,9 +5,73 @@ interface ApiResponse<T> {
   error?: string;
 }
 
+// 토큰 갱신 중인지 체크 (중복 갱신 방지)
+let isRefreshing = false;
+let refreshPromise: Promise<boolean> | null = null;
+
+// 토큰 갱신 함수
+async function refreshTokens(): Promise<boolean> {
+  const refreshToken = localStorage.getItem('refresh_token');
+  if (!refreshToken) return false;
+
+  try {
+    const response = await fetch(`${API_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+
+    if (!response.ok) return false;
+
+    const data = await response.json();
+
+    // 새 토큰 저장
+    localStorage.setItem('access_token', data.access_token);
+    localStorage.setItem('refresh_token', data.refresh_token);
+
+    // Zustand 스토어도 업데이트
+    const stored = localStorage.getItem('checkin-auth-storage');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        parsed.state.accessToken = data.access_token;
+        parsed.state.refreshToken = data.refresh_token;
+        localStorage.setItem('checkin-auth-storage', JSON.stringify(parsed));
+      } catch {
+        // 파싱 실패 시 무시
+      }
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// 로그아웃 처리 (토큰만 삭제, settings 유지)
+function clearTokensAndReload() {
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+
+  const stored = localStorage.getItem('checkin-auth-storage');
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      parsed.state.accessToken = null;
+      parsed.state.refreshToken = null;
+      localStorage.setItem('checkin-auth-storage', JSON.stringify(parsed));
+    } catch {
+      // 파싱 실패 시 무시
+    }
+  }
+
+  window.location.reload();
+}
+
 async function request<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  retry = true
 ): Promise<ApiResponse<T>> {
   const token = localStorage.getItem('access_token');
 
@@ -26,23 +90,30 @@ async function request<T>(
     const data = await response.json();
 
     if (!response.ok) {
-      // 401 Unauthorized - 토큰만 삭제 (설정은 유지)
-      if (response.status === 401) {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        // Zustand 스토어에서 토큰만 제거
-        const stored = localStorage.getItem('checkin-auth-storage');
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            parsed.state.accessToken = null;
-            parsed.state.refreshToken = null;
-            localStorage.setItem('checkin-auth-storage', JSON.stringify(parsed));
-          } catch {
-            // 파싱 실패 시 무시
+      // 401 Unauthorized - refresh token으로 갱신 시도
+      if (response.status === 401 && retry) {
+        // 이미 갱신 중이면 기다림
+        if (isRefreshing && refreshPromise) {
+          const success = await refreshPromise;
+          if (success) {
+            return request<T>(endpoint, options, false);
+          }
+        } else {
+          // 토큰 갱신 시도
+          isRefreshing = true;
+          refreshPromise = refreshTokens();
+          const success = await refreshPromise;
+          isRefreshing = false;
+          refreshPromise = null;
+
+          if (success) {
+            // 새 토큰으로 재요청
+            return request<T>(endpoint, options, false);
           }
         }
-        window.location.reload();
+
+        // 갱신 실패 - 로그아웃
+        clearTokensAndReload();
       }
       return { error: data.error || '요청에 실패했습니다' };
     }
