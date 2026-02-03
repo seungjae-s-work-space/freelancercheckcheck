@@ -42,6 +42,8 @@ export default function CheckInButton({
   const [showEarnExtraModal, setShowEarnExtraModal] = useState(false);
   const createCheckIn = useAuthStore((s) => s.createCheckIn);
   const checkOutAction = useAuthStore((s) => s.checkOut);
+  const useExtraAction = useAuthStore((s) => s.useExtra);
+  const user = useAuthStore((s) => s.user);
 
   const handleCheckIn = async () => {
     if (!location) {
@@ -131,8 +133,32 @@ export default function CheckInButton({
     }
   };
 
+  const handleUseExtra = async () => {
+    if (!canCheckIn) {
+      setError('오전 퇴근을 먼저 해주세요');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const success = await useExtraAction(format(new Date(), 'yyyy-MM-dd'), period);
+      if (!success) {
+        setError('연차 사용에 실패했습니다');
+      }
+    } catch {
+      setError('연차 사용 중 오류가 발생했습니다');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const periodLabel = period === 'morning' ? '오전' : '오후';
   const periodIcon = period === 'morning' ? '🌅' : '🌆';
+
+  // 연차 사용 가능 여부: 출근일(휴무일 아님) && 연차 0.5 이상
+  const canUseExtra = !isExtraDay && (user?.extra_days ?? 0) >= 0.5;
 
   // 연차 적립 확인 모달
   if (showEarnExtraModal) {
@@ -230,25 +256,41 @@ export default function CheckInButton({
         )}
       </div>
 
-      <button
-        onClick={handleCheckIn}
-        disabled={disabled || loading || !location || !canCheckIn}
-        className={`w-full py-3 px-4 rounded-xl font-semibold transition-all ${
-          disabled || !location || !canCheckIn
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-            : loading
-            ? 'bg-blue-100 text-blue-400'
-            : 'bg-blue-500 text-white hover:bg-blue-600 active:scale-95'
-        }`}
-      >
-        {loading
-          ? '확인 중...'
-          : !location
-          ? '위치 설정 필요'
-          : !canCheckIn
-          ? '오전 퇴근 필요'
-          : '출근 도장 찍기'}
-      </button>
+      <div className="space-y-2">
+        <button
+          onClick={handleCheckIn}
+          disabled={disabled || loading || !location || !canCheckIn}
+          className={`w-full py-3 px-4 rounded-xl font-semibold transition-all ${
+            disabled || !location || !canCheckIn
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : loading
+              ? 'bg-blue-100 text-blue-400'
+              : 'bg-blue-500 text-white hover:bg-blue-600 active:scale-95'
+          }`}
+        >
+          {loading
+            ? '확인 중...'
+            : !location
+            ? '위치 설정 필요'
+            : !canCheckIn
+            ? '오전 퇴근 필요'
+            : '출근 도장 찍기'}
+        </button>
+
+        {canUseExtra && (
+          <button
+            onClick={handleUseExtra}
+            disabled={loading || !canCheckIn}
+            className={`w-full py-2 px-4 rounded-xl font-medium text-sm transition-all ${
+              loading || !canCheckIn
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-purple-100 text-purple-700 hover:bg-purple-200 active:scale-95'
+            }`}
+          >
+            🎫 연차 사용 (0.5일)
+          </button>
+        )}
+      </div>
 
       {error && (
         <div className="mt-3 text-sm text-red-500 text-center">{error}</div>

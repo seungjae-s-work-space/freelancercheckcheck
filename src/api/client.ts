@@ -190,6 +190,12 @@ export const checkInApi = {
 
   getByMonth: (year: number, month: number) =>
     request<{ check_ins: CheckIn[] }>(`/checkins?year=${year}&month=${month}`),
+
+  useExtra: (data: { date: string; period: 'morning' | 'afternoon' }) =>
+    request<{ check_in: CheckIn; user: User }>('/use-extra', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 };
 
 // Types

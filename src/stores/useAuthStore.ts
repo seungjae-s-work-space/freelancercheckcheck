@@ -40,6 +40,7 @@ interface AuthStore {
   fetchCheckIns: (date: string) => Promise<void>;
   fetchTodayCheckIns: () => Promise<void>;
   fetchCheckInsByMonth: (year: number, month: number) => Promise<void>;
+  useExtra: (date: string, period: 'morning' | 'afternoon') => Promise<boolean>;
 
   clearError: () => void;
 }
@@ -225,6 +226,30 @@ export const useAuthStore = create<AuthStore>()(
         if (data) {
           set({ checkIns: data.check_ins });
         }
+      },
+
+      useExtra: async (date, period) => {
+        set({ isLoading: true, error: null });
+        const { data, error } = await checkInApi.useExtra({ date, period });
+
+        if (error) {
+          set({ isLoading: false, error });
+          return false;
+        }
+
+        if (data) {
+          const today = new Date().toISOString().split('T')[0];
+          const isToday = date === today;
+          set((state) => ({
+            checkIns: [...state.checkIns, data.check_in],
+            todayCheckIns: isToday ? [...state.todayCheckIns, data.check_in] : state.todayCheckIns,
+            user: data.user,
+            isLoading: false,
+          }));
+          return true;
+        }
+
+        return false;
       },
 
       clearError: () => set({ error: null }),
