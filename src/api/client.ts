@@ -172,14 +172,15 @@ export const checkInApi = {
     location_name: string;
     lat: number;
     lng: number;
+    is_extra_day?: boolean;
   }) =>
     request<{ check_in: CheckIn }>('/checkins', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
-  checkOut: (data: { date: string; period: 'morning' | 'afternoon' }) =>
-    request<{ check_in: CheckIn }>('/checkouts', {
+  checkOut: (data: { date: string; period: 'morning' | 'afternoon'; earn_extra?: boolean }) =>
+    request<{ check_in: CheckIn; user: User }>('/checkouts', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -196,6 +197,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  extra_days: number;
   created_at: string;
 }
 
@@ -236,4 +238,6 @@ export interface CheckIn {
   checked_at: string;
   checked_out_at: string | null;
   work_minutes: number;
+  is_extra_day: boolean;
+  earned_extra: number;
 }

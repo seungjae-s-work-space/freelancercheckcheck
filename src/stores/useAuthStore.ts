@@ -34,8 +34,9 @@ interface AuthStore {
     location_name: string;
     lat: number;
     lng: number;
+    is_extra_day?: boolean;
   }) => Promise<boolean>;
-  checkOut: (date: string, period: 'morning' | 'afternoon') => Promise<boolean>;
+  checkOut: (date: string, period: 'morning' | 'afternoon', earnExtra?: boolean) => Promise<boolean>;
   fetchCheckIns: (date: string) => Promise<void>;
   fetchTodayCheckIns: () => Promise<void>;
   fetchCheckInsByMonth: (year: number, month: number) => Promise<void>;
@@ -174,9 +175,9 @@ export const useAuthStore = create<AuthStore>()(
         return false;
       },
 
-      checkOut: async (date, period) => {
+      checkOut: async (date, period, earnExtra = false) => {
         set({ isLoading: true, error: null });
-        const { data, error } = await checkInApi.checkOut({ date, period });
+        const { data, error } = await checkInApi.checkOut({ date, period, earn_extra: earnExtra });
 
         if (error) {
           set({ isLoading: false, error });
@@ -195,6 +196,7 @@ export const useAuthStore = create<AuthStore>()(
                   c.id === data.check_in.id ? data.check_in : c
                 )
               : state.todayCheckIns,
+            user: data.user || state.user, // 연차 적립 시 user 업데이트
             isLoading: false,
           }));
           return true;

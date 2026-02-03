@@ -17,6 +17,7 @@ interface Props {
   disabled: boolean;
   checkIn: CheckIn | null; // 해당 period의 출퇴근 기록
   canCheckIn: boolean; // 출근 가능 여부 (오전 퇴근 안했으면 오후 출근 불가)
+  isExtraDay: boolean; // 휴무일 여부
 }
 
 function formatWorkTime(minutes: number): string {
@@ -34,9 +35,11 @@ export default function CheckInButton({
   disabled,
   checkIn,
   canCheckIn,
+  isExtraDay,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showEarnExtraModal, setShowEarnExtraModal] = useState(false);
   const createCheckIn = useAuthStore((s) => s.createCheckIn);
   const checkOutAction = useAuthStore((s) => s.checkOut);
 
@@ -86,6 +89,7 @@ export default function CheckInButton({
         location_name: location.name,
         lat: latitude,
         lng: longitude,
+        is_extra_day: isExtraDay,
       });
 
       if (!success) {
@@ -99,11 +103,24 @@ export default function CheckInButton({
   };
 
   const handleCheckOut = async () => {
+    // 휴무일 출근이고 3시간 이상 근무했으면 연차 적립 여부 물어보기
+    if (checkIn?.is_extra_day) {
+      const workMinutes = Math.floor((Date.now() - new Date(checkIn.checked_at).getTime()) / 60000);
+      if (workMinutes >= 180) {
+        setShowEarnExtraModal(true);
+        return;
+      }
+    }
+    await doCheckOut(false);
+  };
+
+  const doCheckOut = async (earnExtra: boolean) => {
     setLoading(true);
     setError(null);
+    setShowEarnExtraModal(false);
 
     try {
-      const success = await checkOutAction(format(new Date(), 'yyyy-MM-dd'), period);
+      const success = await checkOutAction(format(new Date(), 'yyyy-MM-dd'), period, earnExtra);
       if (!success) {
         setError('퇴근 기록에 실패했습니다');
       }
@@ -117,6 +134,38 @@ export default function CheckInButton({
   const periodLabel = period === 'morning' ? '오전' : '오후';
   const periodIcon = period === 'morning' ? '🌅' : '🌆';
 
+  // 연차 적립 확인 모달
+  if (showEarnExtraModal) {
+    return (
+      <div className="p-6 bg-purple-50 rounded-2xl border-2 border-purple-200">
+        <div className="text-center mb-4">
+          <div className="text-3xl mb-2">🎉</div>
+          <div className="font-semibold text-purple-800">연차 적립</div>
+          <div className="text-sm text-purple-600 mt-2">
+            휴무일에 3시간 이상 근무했습니다!<br />
+            0.5일 연차를 적립할까요?
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => doCheckOut(false)}
+            disabled={loading}
+            className="flex-1 py-3 px-4 rounded-xl font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300"
+          >
+            아니요
+          </button>
+          <button
+            onClick={() => doCheckOut(true)}
+            disabled={loading}
+            className="flex-1 py-3 px-4 rounded-xl font-semibold bg-purple-500 text-white hover:bg-purple-600"
+          >
+            {loading ? '처리 중...' : '적립하기'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // 퇴근 완료 상태
   if (checkIn?.checked_out_at) {
     return (
@@ -128,6 +177,11 @@ export default function CheckInButton({
           <div className="text-xs text-green-500 mt-2">
             업무시간: {formatWorkTime(checkIn.work_minutes)}
           </div>
+          {checkIn.earned_extra > 0 && (
+            <div className="text-xs text-purple-600 mt-1 font-medium">
+              🎉 연차 +{checkIn.earned_extra}일 적립
+            </div>
+          )}
         </div>
       </div>
     );

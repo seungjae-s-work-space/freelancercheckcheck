@@ -92,7 +92,14 @@ function App() {
       {/* Header */}
       <header className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold">프리랜서 출근</h1>
+          <div>
+            <h1 className="text-xl font-bold">프리랜서 출근</h1>
+            {(user?.extra_days ?? 0) > 0 && (
+              <div className="text-xs text-purple-600 font-medium">
+                🎉 적립 연차: {user?.extra_days}일
+              </div>
+            )}
+          </div>
           <button
             onClick={() => setShowSettings(true)}
             className="p-2 hover:bg-gray-100 rounded-lg"
@@ -129,9 +136,10 @@ function App() {
                   }
                 : null
             }
-            disabled={!isWorkDay}
+            disabled={false}
             checkIn={morningCheckIn}
             canCheckIn={true}
+            isExtraDay={!isWorkDay}
           />
           <CheckInButton
             period="afternoon"
@@ -145,9 +153,10 @@ function App() {
                   }
                 : null
             }
-            disabled={!isWorkDay}
+            disabled={false}
             checkIn={afternoonCheckIn}
             canCheckIn={canAfternoonCheckIn}
+            isExtraDay={!isWorkDay}
           />
         </div>
 
