@@ -118,6 +118,70 @@ export default function Calendar() {
           <span>출근일</span>
         </div>
       </div>
+
+      {/* 이번 달 출퇴근 기록 */}
+      <CheckInList checkIns={checkIns} currentMonth={currentMonth} />
+    </div>
+  );
+}
+
+function CheckInList({ checkIns, currentMonth }: { checkIns: CheckIn[]; currentMonth: Date }) {
+  const monthCheckIns = checkIns.filter(
+    (c) => c.date.substring(0, 7) === format(currentMonth, 'yyyy-MM')
+  );
+
+  if (monthCheckIns.length === 0) {
+    return (
+      <div className="mt-4 pt-4 border-t">
+        <h4 className="font-semibold mb-3 text-sm">이번 달 출퇴근 기록</h4>
+        <p className="text-gray-400 text-sm text-center py-4">출퇴근 기록이 없습니다.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 pt-4 border-t">
+      <h4 className="font-semibold mb-3 text-sm">이번 달 출퇴근 기록</h4>
+      <div className="space-y-2 max-h-48 overflow-y-auto">
+        {monthCheckIns
+          .sort((a, b) => b.date.localeCompare(a.date) || (a.period === 'morning' ? -1 : 1))
+          .map((checkIn) => (
+            <div
+              key={checkIn.id}
+              className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2 text-sm"
+            >
+              <div className="flex items-center gap-2">
+                <span className="font-medium">
+                  {format(new Date(checkIn.date), 'M/d(E)', { locale: ko })}
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded text-xs ${
+                    checkIn.period === 'morning'
+                      ? 'bg-orange-100 text-orange-700'
+                      : 'bg-purple-100 text-purple-700'
+                  }`}
+                >
+                  {checkIn.period === 'morning' ? '오전' : '오후'}
+                </span>
+              </div>
+              <div className="text-gray-500 text-xs">
+                {format(new Date(checkIn.checked_at), 'HH:mm')}
+                {checkIn.checked_out_at && (
+                  <>
+                    <span className="mx-1">→</span>
+                    {format(new Date(checkIn.checked_out_at), 'HH:mm')}
+                    <span className="text-green-600 ml-1">
+                      ({Math.floor(checkIn.work_minutes / 60)}h {checkIn.work_minutes % 60}m)
+                    </span>
+                  </>
+                )}
+                {!checkIn.checked_out_at && (
+                  <span className="text-yellow-600 ml-1">근무중</span>
+                )}
+              </div>
+            </div>
+          ))}
+      </div>
     </div>
   );
 }
