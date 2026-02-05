@@ -4,6 +4,7 @@ import { ko } from 'date-fns/locale';
 import { useAuthStore } from '../../stores/useAuthStore';
 import { adminApi, type User, type CheckIn, type UserStats } from '../../api/client';
 import { Link } from 'react-router-dom';
+import UserCalendarModal from '../../components/UserCalendarModal';
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
@@ -12,6 +13,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'today' | 'users' | 'stats'>('today');
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
@@ -224,8 +226,19 @@ export default function AdminDashboard() {
                     return (
                       <tr key={u.id} className="hover:bg-gray-50">
                         <td className="px-4 py-3">
-                          <div className="font-medium">{u.name}</div>
-                          <div className="text-sm text-gray-500">{u.email}</div>
+                          <div className="flex items-center gap-2">
+                            <div>
+                              <div className="font-medium">{u.name}</div>
+                              <div className="text-sm text-gray-500">{u.email}</div>
+                            </div>
+                            <button
+                              onClick={() => setSelectedUser(u)}
+                              className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200"
+                              title="달력으로 보기"
+                            >
+                              📅
+                            </button>
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-center">
                           {morning ? (
@@ -334,7 +347,18 @@ export default function AdminDashboard() {
               <tbody className="divide-y divide-gray-100">
                 {users.map(u => (
                   <tr key={u.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium">{u.name}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{u.name}</span>
+                        <button
+                          onClick={() => setSelectedUser(u)}
+                          className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200"
+                          title="달력으로 보기"
+                        >
+                          📅
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-gray-500">{u.email}</td>
                     <td className="px-4 py-3 text-center">
                       <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -409,8 +433,22 @@ export default function AdminDashboard() {
                   {stats.map(s => (
                     <tr key={s.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3">
-                        <div className="font-medium">{s.name}</div>
-                        <div className="text-sm text-gray-500">{s.email}</div>
+                        <div className="flex items-center gap-2">
+                          <div>
+                            <div className="font-medium">{s.name}</div>
+                            <div className="text-sm text-gray-500">{s.email}</div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              const userObj = users.find(u => u.id === s.id);
+                              if (userObj) setSelectedUser(userObj);
+                            }}
+                            className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200"
+                            title="달력으로 보기"
+                          >
+                            📅
+                          </button>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-center font-medium">{s.total_days}일</td>
                       <td className="px-4 py-3 text-center font-medium">{formatMinutes(s.total_minutes)}</td>
@@ -423,6 +461,14 @@ export default function AdminDashboard() {
           </div>
         )}
       </main>
+
+      {/* User Calendar Modal */}
+      {selectedUser && (
+        <UserCalendarModal
+          user={selectedUser}
+          onClose={() => setSelectedUser(null)}
+        />
+      )}
     </div>
   );
 }
