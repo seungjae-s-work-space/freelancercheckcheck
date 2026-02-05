@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { Link } from 'react-router-dom';
 import { useAuthStore } from './stores/useAuthStore';
 import CheckInButton from './components/CheckInButton';
 import Calendar from './components/Calendar';
@@ -94,8 +95,16 @@ function App() {
         <div className="max-w-lg mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-bold">프리랜서 출근</h1>
           <div className="flex items-center gap-3">
+            {user?.role === 'admin' && (
+              <Link
+                to="/admin"
+                className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium hover:bg-indigo-200"
+              >
+                관리자
+              </Link>
+            )}
             <div className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-medium">
-              🎫 연차 {user?.extra_days ?? 0}일
+              연차 {user?.extra_days ?? 0}일
             </div>
             <button
               onClick={() => setShowSettings(true)}

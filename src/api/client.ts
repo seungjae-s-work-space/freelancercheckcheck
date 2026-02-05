@@ -198,13 +198,72 @@ export const checkInApi = {
     }),
 };
 
+// Admin API
+export const adminApi = {
+  // 사용자 관리
+  getAllUsers: () =>
+    request<{ users: User[] }>('/admin/users'),
+
+  updateUserRole: (userId: string, role: 'user' | 'admin') =>
+    request<{ message: string }>('/admin/users/role', {
+      method: 'PUT',
+      body: JSON.stringify({ user_id: userId, role }),
+    }),
+
+  updateUserExtraDays: (userId: string, extraDays: number) =>
+    request<{ user: User }>('/admin/users/extra-days', {
+      method: 'PUT',
+      body: JSON.stringify({ user_id: userId, extra_days: extraDays }),
+    }),
+
+  // 출근 기록 관리
+  getAllCheckIns: (params: { date?: string; year?: number; month?: number }) => {
+    if (params.date) {
+      return request<{ check_ins: CheckIn[] }>(`/admin/checkins?date=${params.date}`);
+    }
+    return request<{ check_ins: CheckIn[] }>(`/admin/checkins?year=${params.year}&month=${params.month}`);
+  },
+
+  createCheckIn: (data: { user_id: string; date: string; period: 'morning' | 'afternoon'; location_name?: string }) =>
+    request<{ check_in: CheckIn }>('/admin/checkins', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  createCheckOut: (data: { user_id: string; date: string; period: 'morning' | 'afternoon' }) =>
+    request<{ check_in: CheckIn }>('/admin/checkouts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  deleteCheckIn: (checkInId: string) =>
+    request<{ message: string }>(`/admin/checkins/${checkInId}`, {
+      method: 'DELETE',
+    }),
+
+  // 통계
+  getUserStats: (year: number, month: number) =>
+    request<{ stats: UserStats[] }>(`/admin/stats?year=${year}&month=${month}`),
+};
+
 // Types
 export interface User {
   id: string;
   email: string;
   name: string;
+  role: 'user' | 'admin';
   extra_days: number;
   created_at: string;
+}
+
+export interface UserStats {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  extra_days: number;
+  total_days: number;
+  total_minutes: number;
 }
 
 export interface Settings {
