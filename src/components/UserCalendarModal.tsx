@@ -68,7 +68,7 @@ export default function UserCalendarModal({ user, onClose }: UserCalendarModalPr
   while (day <= endDate) {
     for (let i = 0; i < 7; i++) {
       const dateStr = format(day, 'yyyy-MM-dd');
-      const dayCheckIns = checkIns.filter(c => c.date === dateStr);
+      const dayCheckIns = checkIns.filter(c => c.date.substring(0, 10) === dateStr);
 
       days.push(
         <DayCell
